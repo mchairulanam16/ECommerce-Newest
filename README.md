@@ -1,9 +1,8 @@
-markdown
-# ?? E-Commerce Order System
+# 🛒 E-Commerce Order System
 
 A scalable order processing system built with .NET 8, designed to handle high-concurrency scenarios like flash sales with proper inventory management and transaction safety.
 
-## ? Features
+## ✨ Features
 
 - **Atomic Order Creation**: Transaction-based order processing with rollback support
 - **Inventory Management**: Optimistic concurrency control using RowVersion
@@ -12,23 +11,23 @@ A scalable order processing system built with .NET 8, designed to handle high-co
 - **Order Cancellation**: Automatic inventory release on cancellation
 - **Comprehensive Testing**: Unit, integration, and load tests
 
-## ??? Architecture
+## 🏗️ Architecture
 
 ### Clean Architecture Layers
 ECommerce/
-??? Domain/ # Business entities & contracts
-? ??? Entities/ # Order, InventoryItem (with RowVersion)
-? ??? Repositories/ # IOrderRepository, IInventoryRepository, IUnitOfWork
-??? Application/ # Use cases & business logic
-? ??? Services/ # OrderCreationService, OrderCancellationService
-? ??? DTOs/ # CreateOrderItem, OrderResult
-??? Infrastructure/ # Implementations
-? ??? Repositories/ # EF Core repository implementations
-? ??? Persistence/ # DbContext, configurations
-? ??? Resilience/ # Retry policies, circuit breakers
-??? Tests/ # Test projects
-??? Unit/ # Unit tests (business logic)
-??? LoadTests/ # Concurrency & performance tests
+├── Domain/ # Business entities & contracts
+│ ├── Entities/ # Order, InventoryItem (with RowVersion)
+│ └── Repositories/ # IOrderRepository, IInventoryRepository, IUnitOfWork
+├── Application/ # Use cases & business logic
+│ ├── Services/ # OrderCreationService, OrderCancellationService
+│ └── DTOs/ # CreateOrderItem, OrderResult
+├── Infrastructure/ # Implementations
+│ ├── Repositories/ # EF Core repository implementations
+│ ├── Persistence/ # DbContext, configurations
+│ └── Resilience/ # Retry policies, circuit breakers
+└── Tests/ # Test projects
+├── Unit/ # Unit tests (business logic)
+└── LoadTests/ # Concurrency & performance tests
 
 text
 
@@ -39,13 +38,13 @@ text
 - **Retry Pattern**: Exponential backoff for transient failures
 - **Compensation Pattern**: Automatic rollback on failures
 
-## ?? Prerequisites
+## 📋 Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [SQL Server 2019+](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) or Docker
 - [Visual Studio 2022](https://visualstudio.microsoft.com/) or [VS Code](https://code.visualstudio.com/)
 
-## ?? Quick Start
+## 🚀 Quick Start
 
 ### 1. Clone and Setup
 ```bash
@@ -91,7 +90,7 @@ dotnet run --project ECommerce.API
 dotnet run --launch-profile https
 The API will be available at: https://localhost:5001 (or http://localhost:5000)
 
-?? API Reference
+📚 API Reference
 Base URL
 text
 https://localhost:5001/api
@@ -143,15 +142,15 @@ json
   "status": "CANCELLED",
   "cancelledAt": "2024-01-15T10:35:00Z"
 }
-?? Testing
+🧪 Testing
 Test Structure
 text
 Tests/
-??? Unit/
-?   ??? Services/
-?       ??? OrderCreationServiceTests.cs    # Business logic tests
-??? LoadTests/
-    ??? FlashSaleLoadTest.cs                # Concurrency tests
+├── Unit/
+│   └── Services/
+│       └── OrderCreationServiceTests.cs    # Business logic tests
+└── LoadTests/
+    └── FlashSaleLoadTest.cs                # Concurrency tests
 Key Test Scenarios
 1. Unit Tests (Business Logic)
 csharp
@@ -186,13 +185,13 @@ dotnet test --parallel
 Test Coverage
 text
 OrderCreationService: 92%
-??? Happy Path: 45%
-??? Error Handling: 35%
-??? Edge Cases: 20%
+├── Happy Path: 45%
+├── Error Handling: 35%
+└── Edge Cases: 20%
 
 InventoryRepository: 85%
 OrderCancellationService: 88%
-?? Concurrency Handling
+🔄 Concurrency Handling
 Flash Sale Implementation
 The system is designed to handle flash sale scenarios with the following strategies:
 
@@ -203,7 +202,7 @@ public class InventoryItem
     public string Sku { get; private set; }
     public int ActualQty { get; private set; }
     public int ReservedQty { get; private set; }
-    public byte[] RowVersion { get; private set; } // ? Optimistic locking
+    public byte[] RowVersion { get; private set; } // ← Optimistic locking
     
     public void Reserve(int qty)
     {
@@ -240,7 +239,7 @@ public async Task FlashSale_500ConcurrentRequests_ShouldHandleCorrectly()
     results.SuccessCount.Should().Be(stock);
     results.FailureCount.Should().Be(requests - stock);
 }
-?? Database Schema
+📊 Database Schema
 InventoryItems Table
 sql
 CREATE TABLE InventoryItems (
@@ -275,7 +274,7 @@ CREATE TABLE OrderItems (
     UnitPrice DECIMAL(18,2) NOT NULL,
     FOREIGN KEY (OrderId) REFERENCES Orders(Id) ON DELETE CASCADE
 );
-?? Configuration
+🔧 Configuration
 appsettings.json
 json
 {
@@ -307,7 +306,7 @@ bash
 # For production
 export ConnectionStrings__DefaultConnection="Server=prod-db;Database=ECommerceProd;User Id=user;Password=pass;"
 export PaymentService__ApiKey="prod-api-key"
-?? Business Rules
+🚦 Business Rules
 Order Creation
 Quantity Validation: Must be positive integer (1-100)
 
@@ -335,7 +334,7 @@ Async Processing: Non-blocking payment verification
 
 Failure Handling: Automatic rollback on payment failure
 
-?? Troubleshooting
+🐛 Troubleshooting
 Common Issues
 1. Database Connection Issues
 bash
@@ -371,7 +370,7 @@ EXEC sp_who2
 
 # Check for blocking queries
 SELECT * FROM sys.dm_exec_requests WHERE blocking_session_id <> 0
-?? Performance Considerations
+📈 Performance Considerations
 Expected Performance
 Scenario	Concurrent Users	Avg Response Time	Success Rate
 Normal Load	100	< 200ms	99.9%
@@ -399,7 +398,7 @@ Average transaction time
 
 Inventory reservation success rate
 
-?? Future Enhancements
+🔮 Future Enhancements
 Short Term (Next Release)
 Redis Caching: Cache inventory counts to reduce DB load
 
@@ -427,7 +426,7 @@ Multi-region: Geographic distribution for latency
 
 Machine Learning: Dynamic pricing and inventory prediction
 
-????? Development
+👨‍💻 Development
 Code Style
 Use C# 12 features where appropriate
 
@@ -461,13 +460,13 @@ No breaking changes
 
 Performance considered
 
-?? License
+📝 License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-?? Contributors
+👥 Contributors
 Your Name
 
-?? Acknowledgments
+🙏 Acknowledgments
 .NET Team for the excellent framework
 
 Entity Framework Core Team
@@ -476,7 +475,7 @@ Polly Team for resilience patterns
 
 xUnit Team for testing framework
 
-?? Support
+📞 Support
 For issues, questions, or contributions:
 
 Check Troubleshooting section
@@ -485,28 +484,28 @@ Search existing Issues
 
 Create a new issue with detailed description
 
-Happy Coding! ??
+Happy Coding! 🚀
 
 text
 
-## **?? FILE STRUCTURE YANG DIHARAPKAN**
+## **📁 FILE STRUCTURE YANG DIHARAPKAN**
 ECommerceSolution/
-??? README.md ? File ini
-??? LICENSE ? License file (optional)
-??? .gitignore ? Git ignore file
-??? ECommerce.sln ? Solution file
-??? src/
-? ??? ECommerce.API/ ? Web API project
-? ??? ECommerce.Application/ ? Application layer
-? ??? ECommerce.Domain/ ? Domain layer
-? ??? ECommerce.Infrastructure/? Infrastructure layer
-??? tests/
-??? ECommerce.Tests/ ? Test project
-??? ECommerce.LoadTests/ ? Load test project
+├── README.md ← File ini
+├── LICENSE ← License file (optional)
+├── .gitignore ← Git ignore file
+├── ECommerce.sln ← Solution file
+├── src/
+│ ├── ECommerce.API/ ← Web API project
+│ ├── ECommerce.Application/ ← Application layer
+│ ├── ECommerce.Domain/ ← Domain layer
+│ └── ECommerce.Infrastructure/← Infrastructure layer
+└── tests/
+├── ECommerce.Tests/ ← Test project
+└── ECommerce.LoadTests/ ← Load test project
 
 text
 
-## **?? VERSI SINGKAT (Jika Waktu Terbatas)**
+## **🎯 VERSI SINGKAT (Jika Waktu Terbatas)**
 
 Jika mau yang lebih singkat:
 
