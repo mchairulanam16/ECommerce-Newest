@@ -15,11 +15,8 @@ A scalable order processing system built with .NET 8, designed to handle high-co
 
 ### Clean Architecture Layers
 
-<img width="539" height="287" alt="image" src="https://github.com/user-attachments/assets/af4d22fd-08a2-49d4-9dd1-422dc26f0419" />
+<img width="493" height="280" alt="image" src="https://github.com/user-attachments/assets/95f83ba5-3ec7-4440-b865-4cb5b0dfdd1f" />
 
-
-
-text
 
 ### Design Patterns Used
 - **Repository Pattern**: Abstraction over data access
