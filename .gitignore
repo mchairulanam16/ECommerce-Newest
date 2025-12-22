@@ -1,0 +1,47 @@
+## Core .NET ignores
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+
+## Visual Studio
+*.vcxproj.user
+*.vcxproj.filters
+*.sln.iml
+
+## Rider
+.idea/
+
+## VS Code
+.vscode/
+
+## NuGet
+packages/
+*.nupkg
+*.snupkg
+
+## User files
+*.db
+*.db-journal
+*.log
+*.tmp
+
+## Resource files (ignore semua di folder resources)
+**/Resources/*.resources
+**/*.resx
+!**/*.resx  # Tapi keep file .resx aslinya
+
+## AssemblyInfo yang auto-generated
+**/Properties/AssemblyInfo.cs
