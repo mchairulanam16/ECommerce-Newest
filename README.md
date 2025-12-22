@@ -14,21 +14,9 @@ A scalable order processing system built with .NET 8, designed to handle high-co
 ## 🏗️ Architecture
 
 ### Clean Architecture Layers
-ECommerce/
-├── Domain/ # Business entities & contracts
-│ ├── Entities/ # Order, InventoryItem (with RowVersion)
-│ └── Repositories/ # IOrderRepository, IInventoryRepository, IUnitOfWork
-├── Application/ # Use cases & business logic
-│ ├── Services/ # OrderCreationService, OrderCancellationService
-│ └── DTOs/ # CreateOrderItem, OrderResult
-├── Infrastructure/ # Implementations
-│ ├── Repositories/ # EF Core repository implementations
-│ ├── Persistence/ # DbContext, configurations
-│ └── Resilience/ # Retry policies, circuit breakers
-└── Tests/ # Test projects
-├── Unit/ # Unit tests (business logic)
-└── LoadTests/ # Concurrency & performance tests
-<img width="493" height="280" alt="image" src="https://github.com/user-attachments/assets/9355f044-b383-4f6d-99f8-7089b5601550" />
+
+<img width="539" height="287" alt="image" src="https://github.com/user-attachments/assets/af4d22fd-08a2-49d4-9dd1-422dc26f0419" />
+
 
 
 text
