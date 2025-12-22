@@ -28,6 +28,8 @@ ECommerce/
 └── Tests/ # Test projects
 ├── Unit/ # Unit tests (business logic)
 └── LoadTests/ # Concurrency & performance tests
+<img width="493" height="280" alt="image" src="https://github.com/user-attachments/assets/9355f044-b383-4f6d-99f8-7089b5601550" />
+
 
 text
 
