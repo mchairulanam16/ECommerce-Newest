@@ -4,7 +4,7 @@ A scalable order processing system built with .NET 8, designed to handle high-co
 
 ## ✨ Features
 
-- **Atomic Order Creation**: Transaction-based order processing with rollback support
+- **Transactional Order Creation**: ACID-compliant order processing with rollback support
 - **Inventory Management**: Optimistic concurrency control using RowVersion
 - **Flash Sale Ready**: Handles concurrent requests with retry logic
 - **Payment Integration**: External payment service with idempotency
@@ -199,16 +199,29 @@ public class InventoryItem
     }
 }
 2. Retry Mechanism
-csharp
+
+The system implements retry logic at the inventory reservation level to handle concurrency conflicts:
+
+```csharp
 public async Task<OrderResult> CreateAsync(Guid userId, List<CreateOrderItem> items)
 {
-    return await ExecuteWithRetryAsync(async () =>
+    return await _unitOfWork.ExecuteInTransactionAsync(async () =>
     {
-        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        var groupedItems = items
+            .GroupBy(x => x.Sku)
+            .Select(g => new { Sku = g.Key, Qty = g.Sum(x => x.Qty) })
+            .ToList();
+
+        foreach (var item in groupedItems)
         {
-            // Business logic with automatic retry on concurrency conflicts
-        });
-    }, maxRetries: 3);
+            // Retry logic is encapsulated in TryReserveWithRetryAsync
+            var reserved = await _inventoryRepo.TryReserveWithRetryAsync(item.Sku, item.Qty);
+            if (!reserved)
+                throw new DomainException($"Out of stock for {item.Sku}");
+        }
+
+        // ... rest of the order creation logic
+    });
 }
 3. Load Test Example
 csharp
