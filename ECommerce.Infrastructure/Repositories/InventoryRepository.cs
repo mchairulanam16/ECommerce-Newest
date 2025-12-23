@@ -56,7 +56,7 @@ namespace ECommerce.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> TryReserveWithRetryAsyncOld(string sku, int qty)
+        public async Task<bool> TryReserveWithRetryAsync(string sku, int qty)
         {
             const int MaxRetryAttempts = 3;
             for (int attempt = 0; attempt < MaxRetryAttempts; attempt++)
@@ -92,7 +92,7 @@ namespace ECommerce.Infrastructure.Repositories
 
             return false;
         }
-        public async Task<bool> TryReserveWithRetryAsync(string sku, int qty)
+        public async Task<bool> TryReserveWithRetryAsyncNew(string sku, int qty)
         {
             var executionStrategy = _db.Database.CreateExecutionStrategy();
 
