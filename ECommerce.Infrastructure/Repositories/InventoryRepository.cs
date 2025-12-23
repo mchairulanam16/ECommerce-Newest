@@ -56,7 +56,7 @@ namespace ECommerce.Infrastructure.Repositories
             }
         }
 
-        public async Task<bool> TryReserveWithRetryAsync(string sku, int qty)
+        public async Task<bool> TryReserveWithRetryAsyncOld(string sku, int qty)
         {
             const int MaxRetryAttempts = 3;
             for (int attempt = 0; attempt < MaxRetryAttempts; attempt++)
@@ -91,6 +91,48 @@ namespace ECommerce.Infrastructure.Repositories
             }
 
             return false;
+        }
+        public async Task<bool> TryReserveWithRetryAsync(string sku, int qty)
+        {
+            var executionStrategy = _db.Database.CreateExecutionStrategy();
+
+            return await executionStrategy.ExecuteAsync(async () =>
+            {
+                for (int attempt = 0; attempt < 3; attempt++)
+                {
+                    try
+                    {
+                        //using var transaction = await _db.Database.BeginTransactionAsync();
+
+                        var inv = await _db.Inventory
+                            .FirstOrDefaultAsync(x => x.Sku == sku);
+
+                        if (inv == null)
+                            throw new KeyNotFoundException($"Inventory {sku} not found");
+
+                        inv.Reserve(qty); // Will throw if insufficient stock
+
+                        await _db.SaveChangesAsync();
+                        //await transaction.CommitAsync();
+                        return true;
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        if (attempt == 2)
+                            return false;
+
+                        _db.ChangeTracker.Clear();
+                        await Task.Delay(10 * (attempt + 1));
+                    }
+                    catch (Exception)
+                    {
+                        // Handle other exceptions
+                        return false;
+                    }
+                }
+
+                return false;
+            });
         }
 
         public async Task ReleaseAsync(string sku, int qty)

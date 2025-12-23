@@ -8,7 +8,8 @@ namespace ECommerce.Domain.Repositories
 {
     public interface IUnitOfWork
     {
-        Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action);
-        Task ExecuteInTransactionAsync(Func<Task> action);
+        Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> operation);
+        Task ExecuteInTransactionAsync(Func<Task> operation);
+        Task SaveChangesAsync();
     }
 }

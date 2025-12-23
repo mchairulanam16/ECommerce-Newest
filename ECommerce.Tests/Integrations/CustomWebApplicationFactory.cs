@@ -11,7 +11,7 @@ namespace ECommerce.Tests.Integration
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            builder.ConfigureServices(services =>
+            /*builder.ConfigureServices(services =>
             {
                 // Remove the existing DbContext registration
                 var descriptor = services.SingleOrDefault(
@@ -37,6 +37,30 @@ namespace ECommerce.Tests.Integration
 
                 // Ensure the database is created
                 db.Database.EnsureCreated();
+
+                // Bersihkan data sebelumnya
+                db.Database.EnsureDeleted();
+            });*/
+            builder.ConfigureServices(services =>
+            {
+                // Remove existing DbContext configuration
+                var descriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(DbContextOptions<ECommerceDbContext>));
+
+                if (descriptor != null)
+                {
+                    services.Remove(descriptor);
+                }
+
+                // Add InMemory database
+                services.AddDbContext<ECommerceDbContext>(options =>
+                {
+                    options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid()); // Gunakan unique name
+                });
+
+                // JANGAN panggil BuildServiceProvider() di sini!
+                // JANGAN panggil EnsureCreated() di sini!
+                // Biarkan framework yang handle
             });
         }
     }

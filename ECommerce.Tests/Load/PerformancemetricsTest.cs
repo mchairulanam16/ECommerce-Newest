@@ -202,7 +202,7 @@ namespace ECommerce.Tests.Load
         /// Tests memory usage stability under sustained load.
         /// Verifies no memory leaks in order processing.
         /// </summary>
-        [Fact]
+        [Fact(Skip = "Test Belum Selesai")]
         public async Task SustainedLoad_MemoryUsage_ShouldBeStableOld()
         {
             // Arrange

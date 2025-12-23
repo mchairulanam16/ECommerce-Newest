@@ -54,8 +54,7 @@ namespace ECommerce.Api.Controllers
 
             return Ok(ApiResponse<object>.Ok(new
             {
-                message = "Order paid Successfully"
-            }));
+            }, "Order paid Successfully"));
         }
 
         [HttpPost("{id}/cancel")]
@@ -65,8 +64,7 @@ namespace ECommerce.Api.Controllers
 
             return Ok(ApiResponse<object>.Ok(new
             {
-                message = "Order Cancelled"
-            }));
+            }, "Order Cancelled"));
         }
 
         [HttpPost("{id}/ship")]
@@ -76,8 +74,7 @@ namespace ECommerce.Api.Controllers
 
             return Ok(ApiResponse<object>.Ok(new
             {
-                message = "Order marked as shipped"
-            }));
+            },"Order marked as shipped"));
         }
     }
 }

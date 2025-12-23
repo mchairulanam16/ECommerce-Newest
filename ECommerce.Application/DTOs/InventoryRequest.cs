@@ -8,7 +8,7 @@ namespace ECommerce.Application.DTOs
 {
     public record InventoryRequest(
         string Sku,
-        int AvailableQty,
-        int ActualQty
+        int ActualQty,
+        int ReserveQty
     );
 }

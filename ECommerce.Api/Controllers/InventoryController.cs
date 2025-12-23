@@ -28,7 +28,7 @@ namespace ECommerce.Api.Controllers
             if (item == null)
                 throw new KeyNotFoundException($"Inventory {sku} not found");
 
-            return Ok(ApiResponse<InventoryRequest>.Ok(item));
+            return Ok(ApiResponse<InventoryRequest>.Ok(item, "Retrieve Success"));
         }
 
     }
