@@ -26,37 +26,24 @@ namespace ECommerce.Api.Controllers
             _ship = ship;
         }
 
-        /*[HttpPost]
-        public async Task<IActionResult> Create(CreateOrderRequest req)
-        {
-            var id = await _create.CreateAsync(req.UserId, req.Items);
-            return Ok(new { orderId = id, message = "Order created" });
-        }
-
-        [HttpPost("{id}/pay")]
-        public async Task<IActionResult> Pay(Guid id, [FromQuery] string paymentExternalId)
-        {
-            await _pay.PayAsync(id, paymentExternalId);
-            return Ok(new { message = "Order Paid" });
-        }
-
-        [HttpPost("{id}/cancel")]
-        public async Task<IActionResult> Cancel(Guid id)
-        {
-            await _cancel.CancelAsync(id);
-            return Ok(new { message = "Order cancelled" });
-        }*/
-
         [HttpPost]
         public async Task<ActionResult<ApiResponse<object>>> Create(CreateOrderRequest req)
         {
             var result = await _create.CreateAsync(req.UserId, req.Items);
 
-            return Ok(ApiResponse<object>.Ok(new
+            /*return Ok(ApiResponse<object>.Ok(new
             {
                 orderId = result.OrderId,
-                paymentExternalId = result.PaymentExternalId
-            }));
+                paymentExternalId = result.PaymentExternalId,
+                message = "Order Created Successfully"
+            }));*/
+            return StatusCode(
+                StatusCodes.Status201Created,
+                ApiResponse<object>.Created(new
+                {
+                    orderId = result.OrderId,
+                    paymentExternalId = result.PaymentExternalId
+                }, "Order created successfully"));
         }
 
 
@@ -67,7 +54,7 @@ namespace ECommerce.Api.Controllers
 
             return Ok(ApiResponse<object>.Ok(new
             {
-                message = "Order paid"
+                message = "Order paid Successfully"
             }));
         }
 
@@ -78,7 +65,7 @@ namespace ECommerce.Api.Controllers
 
             return Ok(ApiResponse<object>.Ok(new
             {
-                message = "Order cancelled"
+                message = "Order Cancelled"
             }));
         }
 

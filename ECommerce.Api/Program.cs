@@ -18,7 +18,7 @@ builder.Services.AddDbContext<ECommerceDbContext>(opt =>
 {
     var conn = builder.Configuration.GetConnectionString("Default");
     //opt.UseMySql(conn, ServerVersion.AutoDetect(conn));
-    opt.UseMySql(
+    /*opt.UseMySql(
         conn,
         ServerVersion.AutoDetect(conn),
         mySqlOptions =>
@@ -36,7 +36,23 @@ builder.Services.AddDbContext<ECommerceDbContext>(opt =>
             // Migration assembly
             mySqlOptions.MigrationsAssembly("ECommerce.Infrastructure");
         }
-    );
+    );*/
+    opt.UseMySql(
+       conn,
+       ServerVersion.AutoDetect(conn),
+       mySqlOptions =>
+       {
+           // Command timeout
+           mySqlOptions.CommandTimeout(30);
+
+           // Retry on transient failures
+           mySqlOptions.EnableRetryOnFailure(
+               maxRetryCount: 3,
+               maxRetryDelay: TimeSpan.FromSeconds(5),
+               errorNumbersToAdd: null
+           );
+       }
+   );
 
     // Logging queries saat development (matikan di production)
     if (builder.Environment.IsDevelopment())

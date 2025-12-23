@@ -2,6 +2,7 @@
 using ECommerce.Application.DTOs;
 using ECommerce.Application.Services;
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Repositories;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -13,10 +14,52 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace ECommerce.Tests.LoadTests
+namespace ECommerce.Tests.Load
 {
+
+    
     public class FlashSaleLoadTest
     {
+        private readonly Mock<IOrderRepository> mockOrderRepo;
+        private readonly Mock<IInventoryRepository> mockInventoryRepo;
+        private readonly Mock<IUnitOfWork> mockUnitOfWork;
+        private readonly Mock<ILogger<OrderCreationService>> mockLogger;
+
+        public FlashSaleLoadTest()
+        {
+            mockOrderRepo = new Mock<IOrderRepository>();
+            mockInventoryRepo = new Mock<IInventoryRepository>();
+            mockUnitOfWork = new Mock<IUnitOfWork>();
+            mockLogger = new Mock<ILogger<OrderCreationService>>();
+
+            SetupCommonMocks();
+        }
+
+        private void SetupCommonMocks()
+        {
+            // Setup transaction handling
+            mockUnitOfWork
+                .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<Task<OrderResult>>>()))
+                .Returns<Func<Task<OrderResult>>>(async func => await func());
+
+            // Setup order repository
+            mockOrderRepo
+                .Setup(x => x.AddAsync(It.IsAny<Order>()))
+                .Returns(Task.CompletedTask);
+
+            mockOrderRepo
+                .Setup(x => x.SaveChangesAsync())
+                .Returns(Task.CompletedTask);
+        }
+
+        private OrderCreationService CreateService()
+        {
+            return new OrderCreationService(
+                mockOrderRepo.Object,
+                mockInventoryRepo.Object,
+                mockUnitOfWork.Object,
+                mockLogger.Object);
+        }
         [Fact]
         public async Task FlashSale_100ConcurrentOrders_ShouldNotExceedStock()
         {
@@ -25,19 +68,13 @@ namespace ECommerce.Tests.LoadTests
             const int concurrentOrders = 100; // 100 user mencoba order bersamaan
             const string flashSaleSku = "FLASH-001";
 
-            // Mock repositories
-            var mockOrderRepo = new Mock<IOrderRepository>();
-            var mockInventoryRepo = new Mock<IInventoryRepository>();
-            var mockUnitOfWork = new Mock<IUnitOfWork>();
-            var mockLogger = new Mock<ILogger<OrderCreationService>>();
-
             // Simulasi stok dengan thread-safe counter
             var remainingStock = stock;
             var lockObject = new object();
 
             // Setup TryReserveAsync untuk cek dan kurangi stok
             mockInventoryRepo
-                .Setup(x => x.TryReserveAsync(flashSaleSku, 1))
+                .Setup(x => x.TryReserveWithRetryAsync(flashSaleSku, 1))
                 .ReturnsAsync(() =>
                 {
                     lock (lockObject)  // Gunakan lock untuk thread safety
@@ -90,7 +127,7 @@ namespace ECommerce.Tests.LoadTests
 
                         results.Add((true, result.OrderId));
                     }
-                    catch (InvalidOperationException ex) when (ex.Message.Contains("Out of stock"))
+                    catch (DomainException ex) when (ex.Message.Contains("Out of stock"))
                     {
                         results.Add((false, Guid.Empty));
                     }
@@ -132,7 +169,7 @@ namespace ECommerce.Tests.LoadTests
             var lockObject = new object();
 
             mockInventoryRepo
-                .Setup(x => x.TryReserveAsync(sku, It.IsAny<int>()))
+                .Setup(x => x.TryReserveWithRetryAsync(sku, It.IsAny<int>()))
                 .ReturnsAsync((string _, int qty) =>
                 {
                     lock (lockObject)
@@ -170,7 +207,7 @@ namespace ECommerce.Tests.LoadTests
             var tasks = Enumerable.Range(0, requests)
                 .Select(async i =>
                 {
-                    var qty = (i % 3) + 1; // 1, 2, atau 3
+                    var qty = i % 3 + 1; // 1, 2, atau 3
 
                     try
                     {
@@ -184,7 +221,7 @@ namespace ECommerce.Tests.LoadTests
 
                         results.Add((true, qty));
                     }
-                    catch (InvalidOperationException ex) when (ex.Message.Contains("Out of stock"))
+                    catch (DomainException ex) when (ex.Message.Contains("Out of stock"))
                     {
                         results.Add((false, qty));
                     }
@@ -228,7 +265,7 @@ namespace ECommerce.Tests.LoadTests
             var lockObject = new object();
 
             mockInventoryRepo
-                .Setup(x => x.TryReserveAsync(sku, It.IsAny<int>()))
+                .Setup(x => x.TryReserveWithRetryAsync(sku, It.IsAny<int>()))
                 .ReturnsAsync((string _, int qty) =>
                 {
                     lock (lockObject)
@@ -257,7 +294,7 @@ namespace ECommerce.Tests.LoadTests
             var service = new OrderCreationService(
                 mockOrderRepo.Object,
                 mockInventoryRepo.Object,
-                mockUnitOfWork.Object, 
+                mockUnitOfWork.Object,
                 mockLogger.Object);
 
             var successCount = 0;
@@ -278,7 +315,7 @@ namespace ECommerce.Tests.LoadTests
 
                         Interlocked.Increment(ref successCount);
                     }
-                    catch (InvalidOperationException)
+                    catch (DomainException)
                     {
                         // Expected failure
                     }

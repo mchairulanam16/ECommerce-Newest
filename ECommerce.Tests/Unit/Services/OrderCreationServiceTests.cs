@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Moq;
 using Xunit;
 using Microsoft.Extensions.Logging;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Tests.Unit.Services
 {
@@ -55,11 +56,11 @@ namespace ECommerce.Tests.Unit.Services
             };
 
             _inventoryRepoMock
-                .Setup(x => x.TryReserveAsync("A1", 2))
+                .Setup(x => x.TryReserveWithRetryAsync("A1", 2))
                 .ReturnsAsync(true);
 
             _inventoryRepoMock
-                .Setup(x => x.TryReserveAsync("B2", 3))
+                .Setup(x => x.TryReserveWithRetryAsync("B2", 3))
                 .ReturnsAsync(true);
 
             // Act
@@ -70,8 +71,8 @@ namespace ECommerce.Tests.Unit.Services
             result.PaymentExternalId.Should().NotBeNullOrEmpty();
             result.PaymentExternalId.Should().StartWith("PAY-");
 
-            _inventoryRepoMock.Verify(x => x.TryReserveAsync("A1", 2), Times.Once);
-            _inventoryRepoMock.Verify(x => x.TryReserveAsync("B2", 3), Times.Once);
+            _inventoryRepoMock.Verify(x => x.TryReserveWithRetryAsync("A1", 2), Times.Once);
+            _inventoryRepoMock.Verify(x => x.TryReserveWithRetryAsync("B2", 3), Times.Once);
             _orderRepoMock.Verify(x => x.AddAsync(It.IsAny<Order>()), Times.Once);
             _orderRepoMock.Verify(x => x.SaveChangesAsync(), Times.Once);
             _unitOfWorkMock.Verify(x => x.ExecuteInTransactionAsync(It.IsAny<Func<Task<OrderResult>>>()), Times.Once);
@@ -88,14 +89,14 @@ namespace ECommerce.Tests.Unit.Services
             };
 
             _inventoryRepoMock
-                .Setup(x => x.TryReserveAsync("A1", 100))
+                .Setup(x => x.TryReserveWithRetryAsync("A1", 100))
                 .ReturnsAsync(false);
 
             // Act
             Func<Task> act = async () => await _sut.CreateAsync(userId, items);
 
             // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
+            await act.Should().ThrowAsync<DomainException>()
                 .WithMessage("Out of stock for A1");
 
             _orderRepoMock.Verify(x => x.AddAsync(It.IsAny<Order>()), Times.Never);
@@ -114,7 +115,7 @@ namespace ECommerce.Tests.Unit.Services
             };
 
             _inventoryRepoMock
-                .Setup(x => x.TryReserveAsync(It.IsAny<string>(), It.IsAny<int>()))
+                .Setup(x => x.TryReserveWithRetryAsync(It.IsAny<string>(), It.IsAny<int>()))
                 .ReturnsAsync(true);
 
             // Act
@@ -125,10 +126,10 @@ namespace ECommerce.Tests.Unit.Services
 
             // FIX: Correct calculation: 2 + 3 + 1 = 6, not 5
             // Only one SKU (A1) should be reserved
-            _inventoryRepoMock.Verify(x => x.TryReserveAsync("A1", 6), Times.Once);
+            _inventoryRepoMock.Verify(x => x.TryReserveWithRetryAsync("A1", 6), Times.Once);
 
             // FIX: Remove the B2 verification since we don't have B2 in our items list
-            _inventoryRepoMock.Verify(x => x.TryReserveAsync(It.IsAny<string>(), It.IsAny<int>()), Times.Exactly(1));
+            _inventoryRepoMock.Verify(x => x.TryReserveWithRetryAsync(It.IsAny<string>(), It.IsAny<int>()), Times.Exactly(1));
         }
 
         [Theory]
@@ -144,7 +145,7 @@ namespace ECommerce.Tests.Unit.Services
             };
 
             _inventoryRepoMock
-                .Setup(x => x.TryReserveAsync(It.IsAny<string>(), It.IsAny<int>()))
+                .Setup(x => x.TryReserveWithRetryAsync(It.IsAny<string>(), It.IsAny<int>()))
                 .ReturnsAsync(true);
 
             // Act

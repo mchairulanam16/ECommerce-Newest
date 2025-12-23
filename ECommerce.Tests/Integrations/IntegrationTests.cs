@@ -1,6 +1,8 @@
 ﻿using Castle.Core.Logging;
 using ECommerce.Application.DTOs;
 using ECommerce.Application.Services;
+using ECommerce.Domain.Entities;
+using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Repositories;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -12,10 +14,50 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace ECommerce.Tests.LoadTests
+namespace ECommerce.Tests.Integrations
 {
     public class IntegrationTests
     {
+        private readonly Mock<IOrderRepository> mockOrderRepo;
+        private readonly Mock<IInventoryRepository> mockInventoryRepo;
+        private readonly Mock<IUnitOfWork> mockUnitOfWork;
+        private readonly Mock<ILogger<OrderCreationService>> mockLogger;
+
+        public IntegrationTests()
+        {
+            mockOrderRepo = new Mock<IOrderRepository>();
+            mockInventoryRepo = new Mock<IInventoryRepository>();
+            mockUnitOfWork = new Mock<IUnitOfWork>();
+            mockLogger = new Mock<ILogger<OrderCreationService>>();
+
+            SetupCommonMocks();
+        }
+
+        private void SetupCommonMocks()
+        {
+            // Setup transaction handling
+            mockUnitOfWork
+                .Setup(x => x.ExecuteInTransactionAsync(It.IsAny<Func<Task<OrderResult>>>()))
+                .Returns<Func<Task<OrderResult>>>(async func => await func());
+
+            // Setup order repository
+            mockOrderRepo
+                .Setup(x => x.AddAsync(It.IsAny<Order>()))
+                .Returns(Task.CompletedTask);
+
+            mockOrderRepo
+                .Setup(x => x.SaveChangesAsync())
+                .Returns(Task.CompletedTask);
+        }
+
+        private OrderCreationService CreateService()
+        {
+            return new OrderCreationService(
+                mockOrderRepo.Object,
+                mockInventoryRepo.Object,
+                mockUnitOfWork.Object,
+                mockLogger.Object);
+        }
         [Fact]
         public async Task FlashSale_HighConcurrency_ShouldNotExceedStock()
         {
@@ -34,7 +76,7 @@ namespace ECommerce.Tests.LoadTests
             var lockObject = new object();
 
             mockInventoryRepo
-                .Setup(x => x.TryReserveAsync(flashSku, 1))
+                .Setup(x => x.TryReserveWithRetryAsync(flashSku, 1))
                 .ReturnsAsync(() =>
                 {
                     lock (lockObject)
@@ -55,7 +97,7 @@ namespace ECommerce.Tests.LoadTests
             var service = new OrderCreationService(
                 mockOrderRepo.Object,
                 mockInventoryRepo.Object,
-                mockUnitOfWork.Object, 
+                mockUnitOfWork.Object,
                 mockLogger.Object);
 
             var results = new ConcurrentBag<bool>();
@@ -72,7 +114,7 @@ namespace ECommerce.Tests.LoadTests
                         );
                         results.Add(true);
                     }
-                    catch (InvalidOperationException)
+                    catch (DomainException)
                     {
                         results.Add(false);
                     }
@@ -97,10 +139,6 @@ namespace ECommerce.Tests.LoadTests
             };
 
             const int requests = 150;
-            var mockOrderRepo = new Mock<IOrderRepository>();
-            var mockInventoryRepo = new Mock<IInventoryRepository>();
-            var mockUnitOfWork = new Mock<IUnitOfWork>();
-            var mockLogger = new Mock<ILogger<OrderCreationService>>();
 
             var remainingStocks = new ConcurrentDictionary<string, int>(
                 inventory.Select(kvp => new KeyValuePair<string, int>(kvp.Key, kvp.Value))
@@ -150,7 +188,7 @@ namespace ECommerce.Tests.LoadTests
                         );
                         results.Add((sku, true));
                     }
-                    catch (InvalidOperationException)
+                    catch (DomainException)
                     {
                         results.Add((sku, false));
                     }
@@ -180,11 +218,6 @@ namespace ECommerce.Tests.LoadTests
             const string sku = "LIMITED-SKU";
             var userId = Guid.NewGuid();
 
-            var mockOrderRepo = new Mock<IOrderRepository>();
-            var mockInventoryRepo = new Mock<IInventoryRepository>();
-            var mockUnitOfWork = new Mock<IUnitOfWork>();
-            var mockLogger = new Mock<ILogger<OrderCreationService>>();
-
             var remainingStock = stock;
             var lockObject = new object();
 
@@ -210,7 +243,7 @@ namespace ECommerce.Tests.LoadTests
             var service = new OrderCreationService(
                 mockOrderRepo.Object,
                 mockInventoryRepo.Object,
-                mockUnitOfWork.Object, 
+                mockUnitOfWork.Object,
                 mockLogger.Object);
 
             var results = new ConcurrentBag<bool>();
@@ -227,7 +260,7 @@ namespace ECommerce.Tests.LoadTests
                         );
                         results.Add(true);
                     }
-                    catch (InvalidOperationException)
+                    catch (DomainException)
                     {
                         results.Add(false);
                     }

@@ -66,6 +66,11 @@ namespace ECommerce.Api.Middlewares
             {
                 await _next(context);
             }
+            catch (ArgumentException ex)
+            {
+                await WriteErrorResponse(context, ex.Message, "VALIDATION_ERROR", HttpStatusCode.BadRequest);
+            }
+
             catch (DomainException ex)
             {
                 await WriteErrorResponse(context, ex.Message, "DOMAIN_ERROR", HttpStatusCode.Conflict);

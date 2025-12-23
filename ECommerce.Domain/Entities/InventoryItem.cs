@@ -21,7 +21,6 @@ namespace ECommerce.Domain.Entities
         {
             Sku = sku;
             ActualQty = actualQty;
-            //RowVersion = rowVersion ?? BitConverter.GetBytes(1L);
         }
 
         public void Reserve(int qty)
@@ -47,6 +46,17 @@ namespace ECommerce.Domain.Entities
                 throw new InvalidOperationException("Invalid release");
 
             ReservedQty -= qty;
+        }
+
+        public static InventoryItem CreateForTest(string sku, int actualQty, int reservedQty = 0)
+        {
+            return new InventoryItem
+            {
+                Sku = sku,
+                ActualQty = actualQty,
+                ReservedQty = reservedQty,
+                RowVersion = new byte[8] // Default for test
+            };
         }
     }
 }

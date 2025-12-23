@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using ECommerce.Infrastructure.Persistence;
 using ECommerce.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using ECommerce.Domain.Exceptions;
 
 namespace ECommerce.Application.Services
 {
@@ -35,40 +36,35 @@ namespace ECommerce.Application.Services
 
         public async Task<OrderResult> CreateAsync(Guid userId, List<CreateOrderItem> items)
         {
-            return await ExecuteWithRetryAsync(async () => {
-                return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+            {
+                var groupedItems = items
+                    .GroupBy(x => x.Sku)
+                    .Select(g => new { Sku = g.Key, Qty = g.Sum(x => x.Qty) })
+                    .ToList();
+
+                foreach (var item in groupedItems)
                 {
-                    // 1. Group items by SKU
-                    var groupedItems = items
-                        .GroupBy(x => x.Sku)
-                        .Select(g => new { Sku = g.Key, Qty = g.Sum(x => x.Qty) })
-                        .ToList();
+                    var reserved = await _inventoryRepo.TryReserveWithRetryAsync(item.Sku, item.Qty);
+                    if (!reserved)
+                        throw new DomainException($"Out of stock for {item.Sku}");
+                }
 
-                    // 2. Reserve inventory atomically
-                    foreach (var item in groupedItems)
-                    {
-                        var reserved = await _inventoryRepo.TryReserveAsync(item.Sku, item.Qty);
-                        if (!reserved)
-                            throw new InvalidOperationException($"Out of stock for {item.Sku}");
-                    }
+                var order = Order.Create(
+                    userId,
+                    items.Select(x => (x.Sku, x.Qty))
+                );
 
-                    // 3. Create order (pure domain logic)
-                    var order = Order.Create(
-                        userId,
-                        items.Select(x => (x.Sku, x.Qty))
-                    );
+                order.InitPayment($"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}");
 
-                    order.InitPayment($"PAY-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid():N}");
+                await _orderRepo.AddAsync(order);
+                await _orderRepo.SaveChangesAsync();
 
-                    await _orderRepo.AddAsync(order);
-                    await _orderRepo.SaveChangesAsync();
+                _logger.LogInformation("EVENT OrderPlaced {OrderId}", order.Id);
 
-                    _logger.LogInformation("EVENT OrderPlaced {OrderId}", order.Id);
+                return new OrderResult(order.Id, order.PaymentExternalId);
+            });
 
-                    return new OrderResult(order.Id, order.PaymentExternalId);
-                });
-            }, maxRetries: 3);
-            
         }
 
         private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> operation, int maxRetries = 3)
