@@ -5,6 +5,8 @@ using ECommerce.Api.Middlewares;
 using ECommerce.Domain.Repositories;
 using ECommerce.Infrastructure.Repositories;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Mvc;
+using ECommerce.Api.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +73,30 @@ builder.Services.AddScoped<OrderPaymentService>();
 builder.Services.AddScoped<OrderShippedService>();
 builder.Services.AddScoped<OrderCancellationService>();
 builder.Services.AddScoped<InventoryService>();
+
+// Add controllers with validation formatting filter
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+});
+
+// Configure API behavior to produce validation errors
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var problemDetails = new ValidationProblemDetails(context.ModelState)
+        {
+            Title = "Validation failed",
+            Status = StatusCodes.Status400BadRequest,
+            Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1"
+        };
+
+        return new BadRequestObjectResult(problemDetails);
+    };
+});
+
+builder.Services.AddScoped<ValidationFilter>();
 
 
 var app = builder.Build();

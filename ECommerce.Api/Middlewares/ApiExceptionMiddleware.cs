@@ -1,5 +1,6 @@
 ﻿using ECommerce.Api.Contracts;
 using ECommerce.Domain.Exceptions;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace ECommerce.Api.Middlewares
@@ -71,13 +72,22 @@ namespace ECommerce.Api.Middlewares
                 await WriteErrorResponse(context, ex.Message, "VALIDATION_ERROR", HttpStatusCode.BadRequest);
             }
 
+            catch (ValidationException ex)
+            {
+                await WriteErrorResponse(context, ex.Message, "VALIDATION_ERROR", HttpStatusCode.BadRequest);
+            }
+            catch (BadHttpRequestException ex) 
+            {
+                await WriteErrorResponse(context, ex.Message, "VALIDATION_ERROR", HttpStatusCode.BadRequest);
+            }
+
             catch (DomainException ex)
             {
                 await WriteErrorResponse(context, ex.Message, "DOMAIN_ERROR", HttpStatusCode.Conflict);
             }
             catch (InvalidOperationException ex)
             {
-                await WriteErrorResponse(context, ex.Message, "INVALID_OPERATION", HttpStatusCode.Conflict);
+                await WriteErrorResponse(context, ex.Message, "INVALID_OPERATION", HttpStatusCode.BadRequest);
             }
             catch (KeyNotFoundException ex)
             {
